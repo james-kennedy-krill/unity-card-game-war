@@ -5,16 +5,24 @@ using UnityEngine.UI;
 
 public class GameController : MonoBehaviour
 {
+    [Header("Settings")]
     public float timeToWait = 1.0f;
     public float timeToCompare = 2.0f;
+    [Range(1,3)]
+    public int numberOfFaceDownWarCards = 1;
 
+    [Space]
+    [Header("Prefabs and Game Objects")]
     public Sprite[] cardFaces;
     public GameObject cardPrefab;
     public GameObject deckStack;
     public Player[] players;
 
+    [Space]
+    [Header("Components")]
     public Animator warAnimator;
 
+    [Header("Sounds")]
     public AudioClip clickCardSound;
     public AudioClip playCardSound;
     public AudioClip warPreSound;
@@ -34,6 +42,7 @@ public class GameController : MonoBehaviour
     public List<string> player2Hand = new List<string>();
 
     private bool playingCard = false;
+    private bool autoPlay = false;
 
     // Start is called before the first frame update
     void Start()
@@ -108,9 +117,8 @@ public class GameController : MonoBehaviour
     }
 
     public void PlayCards() {
-        // TODO if playing a card disable click
+        // Prevent clicking before animations are done
         if (playingCard) return;
-
         playingCard = true;
 
         StartCoroutine(PlayCardsAndCompare());
@@ -120,10 +128,9 @@ public class GameController : MonoBehaviour
     {
         // play a card from each players hand to the played area
         string player1Card = players[0].PlayCardFromHand();
-        if (war) {
-            yield return new WaitForSeconds(1f);
+        if (!war) {
+            yield return new WaitForSeconds(0.25f);
         }
-        yield return new WaitForSeconds(0.25f);
         string player2Card = players[1].PlayCardFromHand();
 
         // compare each players played card
@@ -167,14 +174,21 @@ public class GameController : MonoBehaviour
 
     IEnumerator War(string player1card, string player2card, List<string> player1stack = null, List<string> player2stack = null) {
         Debug.Log("WAR!!!");
+
+        // Play pre-war sound to get you pumped...
         AudioSource.PlayClipAtPoint(warPreSound, Camera.main.transform.position);
         yield return new WaitForSeconds(2);
+
+        // Animate in WAR!! Popup...
         warAnimator.gameObject.SetActive(true);
         warAnimator.SetTrigger("War");
         AudioSource.PlayClipAtPoint(warSound, Camera.main.transform.position);
         yield return new WaitForSeconds(1.2f);
+
+        // Remove WAR!! Popup to ensure interaction is possible
         warAnimator.gameObject.SetActive(false);
 
+        // Add first card played to stack, save for later...
         if (player1stack != null) {
             player1stack.Add(player1card);
         } else {
@@ -187,8 +201,9 @@ public class GameController : MonoBehaviour
             player2stack = new List<string>() { player2card };
         }
 
-        // deal three more cards, add to stack
-        for(var i=0; i<3; i++) {
+        // deal face down cards, add to stack
+        for(var i=0; i<numberOfFaceDownWarCards; i++) {
+            // Player 1: Check
             players[0].CheckHandCount();
             string player1stackedcard = players[0].PlayCardFromHand(false);
             players[1].CheckHandCount();
@@ -234,7 +249,12 @@ public class GameController : MonoBehaviour
         Transform winningCard = players[winningPlayerIndex].playedArea.transform.GetChild(players[winningPlayerIndex].playedArea.transform.childCount-1).transform;
         winningCard.GetComponent<Animator>().SetTrigger("Grow");
 
-        yield return new WaitForSeconds(timeToCompare);
+        if (war) {
+            yield return new WaitForSeconds(2);
+        } else {
+            yield return new WaitForSeconds(timeToCompare);
+        }
+
 
         winningCard.localScale = new Vector3(1.0f, 1.0f, 1.0f);
         players[winningPlayerIndex].ReceiveCards(new List<string>(cards));
@@ -271,6 +291,18 @@ public class GameController : MonoBehaviour
         players[0].CheckHandCount();
         players[1].CheckHandCount();
         playingCard = false;
+
+        if (autoPlay) {
+            PlayCards();
+        }
+    }
+
+    public void EndGame(Player losingPlayer)
+    {
+
+        Debug.Log("GAME OVER.");
+        StopAllCoroutines();
+        // TODO create game over / lose/win screen
     }
 
     private int CompareCards(string player1Card, string player2Card) {
@@ -328,11 +360,16 @@ public class GameController : MonoBehaviour
             return 1;
         }
 
+        // It's a tie
         return -1;
-
-        // return 0 if player1 card is higher, 1 if player2 card is higher, or -1 if tie
-        // TODO figure out a tie
     }
 
+    public void OnAutoPlayToggle()
+    {
+        autoPlay = !autoPlay;
+        if (autoPlay) {
+            PlayCards();
+        }
+    }
 
 }

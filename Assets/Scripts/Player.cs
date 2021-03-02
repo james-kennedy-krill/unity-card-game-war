@@ -83,7 +83,11 @@ public class Player : MonoBehaviour
     {
         if (hand.Count == 0)
         {
-            ShuffleDiscardToHand();
+            if (discardPile.Count == 0) {
+                gameController.EndGame(this);
+            } else {
+                ShuffleDiscardToHand();
+            }
         }
     }
 
