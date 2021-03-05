@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class GameController : MonoBehaviour
 {
@@ -305,10 +306,12 @@ public class GameController : MonoBehaviour
         Debug.Log("GAME OVER.");
         StopAllCoroutines();
         winLoseAnimator.gameObject.SetActive(true);
-        // TODO create game over / lose/win screen
+
         if (losingPlayer == players[1]) {
+            AudioSource.PlayClipAtPoint(warWinSound, Camera.main.transform.position);
             winLoseAnimator.SetTrigger("Win");
         } else {
+            AudioSource.PlayClipAtPoint(warLoseSound, Camera.main.transform.position);
             winLoseAnimator.SetTrigger("Lose");
         }
     }
@@ -378,6 +381,17 @@ public class GameController : MonoBehaviour
         if (autoPlay) {
             PlayCards();
         }
+    }
+
+    public void RestartLevel()
+    {
+        int currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
+        SceneManager.LoadScene(currentSceneIndex);
+    }
+
+    public void QuitApplication()
+    {
+        Application.Quit();
     }
 
 }
