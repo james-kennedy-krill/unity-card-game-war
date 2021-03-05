@@ -79,16 +79,19 @@ public class Player : MonoBehaviour
         CheckTotalCardCount();
     }
 
-    public void CheckHandCount()
+    public bool CheckHandCount()
     {
         if (hand.Count == 0)
         {
             if (discardPile.Count == 0) {
                 gameController.EndGame(this);
+                return false;
             } else {
                 ShuffleDiscardToHand();
+                return true;
             }
         }
+        return true;
     }
 
     private void CheckTotalCardCount()

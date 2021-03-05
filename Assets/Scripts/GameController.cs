@@ -21,6 +21,7 @@ public class GameController : MonoBehaviour
     [Space]
     [Header("Components")]
     public Animator warAnimator;
+    public Animator winLoseAnimator;
 
     [Header("Sounds")]
     public AudioClip clickCardSound;
@@ -48,6 +49,7 @@ public class GameController : MonoBehaviour
     void Start()
     {
         warAnimator.gameObject.SetActive(false);
+        winLoseAnimator.gameObject.SetActive(false);
         playerCards = new List<string>[] { player1Hand, player2Hand };
         GenerateCards();
     }
@@ -204,9 +206,9 @@ public class GameController : MonoBehaviour
         // deal face down cards, add to stack
         for(var i=0; i<numberOfFaceDownWarCards; i++) {
             // Player 1: Check
-            players[0].CheckHandCount();
+            if (!players[0].CheckHandCount()) break;
             string player1stackedcard = players[0].PlayCardFromHand(false);
-            players[1].CheckHandCount();
+            if (!players[1].CheckHandCount()) break;
             string player2stackedcard = players[1].PlayCardFromHand(false);
             player1stack.Add(player1stackedcard);
             player2stack.Add(player2stackedcard);
@@ -214,8 +216,8 @@ public class GameController : MonoBehaviour
         }
 
         // Reshuffle if no cards left
-        players[0].CheckHandCount();
-        players[1].CheckHandCount();
+        if(!players[0].CheckHandCount()) yield break;
+        if (!players[1].CheckHandCount()) yield break;
 
         // play another card, and compare that card, pass the stack of cards
         StartCoroutine(PlayCardsAndCompare(true, player1stack, player2stack));
@@ -288,8 +290,8 @@ public class GameController : MonoBehaviour
             player.ClearPlayed();
         }
 
-        players[0].CheckHandCount();
-        players[1].CheckHandCount();
+        if (!players[0].CheckHandCount()) yield break;
+        if (!players[1].CheckHandCount()) yield break;
         playingCard = false;
 
         if (autoPlay) {
@@ -302,7 +304,13 @@ public class GameController : MonoBehaviour
 
         Debug.Log("GAME OVER.");
         StopAllCoroutines();
+        winLoseAnimator.gameObject.SetActive(true);
         // TODO create game over / lose/win screen
+        if (losingPlayer == players[1]) {
+            winLoseAnimator.SetTrigger("Win");
+        } else {
+            winLoseAnimator.SetTrigger("Lose");
+        }
     }
 
     private int CompareCards(string player1Card, string player2Card) {
